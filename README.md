@@ -1,2 +1,3 @@
-# reconhecimento_entidade
-Projeto de Reconhecimento de Enteidades nomeadas
+# Reconhecimento de entidades nomeadas por distância de edição
+
+
