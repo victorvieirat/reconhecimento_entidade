@@ -1,0 +1,19 @@
+{
+    "Fruta": {
+        "Abobora": [
+            "Jerimun"
+        ],
+        "Tangerina": [
+            "mexirica",
+            "bergamota"
+        ]
+    },
+    "Cor": {
+        "Roxo": [
+            "Lilas"
+        ],
+        "Azul": [
+            "Ciano"
+        ]
+    }
+}
