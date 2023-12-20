@@ -33,7 +33,7 @@ Aqui está um exemplo:
 ```json
 {
     "Fruta": {
-        "Abobóra": [
+        "Abóbora": [
             "Jerimun"
         ],
         "Tangerina": [
@@ -65,7 +65,7 @@ Aqui está um exemplo:
 "As flores do jardim começaram a desabrochar, exibindo uma tonalidade incrível de lilás de uma tangerina.",
 "No café da manhã, saboreei uma deliciosa tangerina.",
 "Ao pintar a parede da sala, escolhi uma cor vibrante e moderna: o ciano"]
-]
+
 ```
 
 Neste exemplo, temos uma lista contendo quatro textos. Cada texto é uma string que representa uma observação.
