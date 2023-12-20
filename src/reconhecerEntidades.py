@@ -62,10 +62,6 @@ class LeitorJson():
     def normalizar_texto(self,processa_texto):
         pass 
 
-    @abstractmethod
-    def organizar():
-        pass 
-
 class Classes(LeitorJson):
     def __init__(self,caminho_arquivo)-> None:
         super().__init__(caminho_arquivo)
@@ -110,10 +106,8 @@ class Textos(LeitorJson):
         return True
     
     def normalizar_texto(self,processa_texto):
-         self.json_data =  [processa_texto(i) for i in self.json_data]
+         self.data =  [processa_texto(i) for i in self.json_data]
 
-    def organizar(self):
-        self.data = sorted(self.json_data, key=lambda x: len(x), reverse=True)
 
 class Classificador():
     def __init__(self,classes,categorias_tipos):
@@ -122,10 +116,11 @@ class Classificador():
 
     @staticmethod
     def calcular_distancia_edicao(texto,classe):
-        # (insertion, deletion, substitution)
+        # (inserção, deleção, substituição)
         distance = Levenshtein.distance(texto,classe,weights=(1, 1, 1))
         distance = distance/len(classe)
         return distance
+
     
     def predict(self,textos):
         def dividir_em_grupos(texto, tamanho_grupo=3):
@@ -134,34 +129,38 @@ class Classificador():
                 return [texto]
             grupos = [palavras[i:i+tamanho_grupo] for i in range(0, len(palavras))]
             return grupos
+        def processar_categoria(predicoes, indice, categoria_tipo, categoria_nome, categoria_variacao):
+            coluna_distancia = f'{categoria_tipo}_distancia'
+            coluna_classe = f'{categoria_tipo}_classe'
+            if predicoes[coluna_distancia][indice] != 0:
+                if categoria_variacao in textos[indice]:
+                    predicoes[coluna_classe][indice] = categoria_nome
+                    predicoes[coluna_distancia][indice] = 0
+                tamanho_ngrama = len(categoria_variacao.split(" "))
+                for grupo in dividir_em_grupos(textos[indice], tamanho_ngrama):
+                    var_classe_fragmento = " ".join(grupo)
+                    
+                    distancia = self.calcular_distancia_edicao(var_classe_fragmento, categoria_variacao)
+                    if distancia < predicoes[coluna_distancia][indice]:
+                        predicoes[coluna_classe][indice] = categoria_nome
+                        predicoes[coluna_distancia][indice] = distancia
 
         predicoes = {}
         for categoria_tipo in self.categorias_tipos:
             predicoes[f'{categoria_tipo}_distancia'] = [float('inf')]*len(textos)
             predicoes[f'{categoria_tipo}_classe'] = ['']*len(textos)
 
-        for indice in range(0,len(textos)):
-            for categoria_tipo,categoria_nome, categoria_variacao in self.classes:
-                coluna_distancia = f'{categoria_tipo}_distancia'
-                coluna_classe = f'{categoria_tipo}_classe'
-                if predicoes[coluna_distancia][indice] != 0:
-                    if categoria_variacao in textos[indice]:
-                        predicoes[coluna_classe][indice] = categoria_nome
-                        predicoes[coluna_distancia][indice] = 0 
-                    tamanho_ngrama = len(categoria_variacao.split(" "))
-                    for grupo in dividir_em_grupos(textos[indice],tamanho_ngrama):
-                        var_classe_fragmento = " ".join(grupo)
-                        print(var_classe_fragmento)
-                        distancia = self.calcular_distancia_edicao(var_classe_fragmento,categoria_variacao)
-                        if distancia < predicoes[coluna_distancia][indice]:
-                            predicoes[coluna_classe][indice] = categoria_nome
-                            predicoes[coluna_distancia][indice] = distancia 
+        for indice, _ in enumerate(textos):
+            for categoria_tipo, categoria_nome, categoria_variacao in self.classes:
+                processar_categoria(predicoes, indice, categoria_tipo, categoria_nome, categoria_variacao)
+
         return predicoes
 
   
 def main():
-    if len(sys.argv) != 3:
-        print("Uso: python tratarInput.py <caminho_json_dicionario_categorias> <caminho_json_lista_textos>")
+    import time
+    if len(sys.argv) != 4:
+        print("Uso: python reconhecerEntidades <caminho_json_dicionario> <caminho_json_textos> <caminho_saida>")
         sys.exit(1)
 
     caegorias_path = sys.argv[1]
@@ -169,19 +168,20 @@ def main():
     classes.valida_json()
     classes.normalizar_texto(TratarTexto.processar)
     classes.organizar()
-    #print(classes)
     
     textos_path = sys.argv[2]
     textos = Textos(textos_path)
     textos.valida_json()
     textos.normalizar_texto(TratarTexto.processar)
-    textos.organizar()
-    #print(textos)
-    #if classes:
-     
-    #   print(classes)
+
+
+    output_path = sys.argv[3]     
     clsf = Classificador(classes.data,classes.unique)
-    print(clsf.predict(textos.data))
+    predictions = clsf.predict(textos.data)
+    predictions =  json.dumps(predictions, indent=2)
+    with open(output_path, 'w') as arquivo_json:
+        arquivo_json.write(predictions)
+
 
 if __name__ == "__main__":
     main()

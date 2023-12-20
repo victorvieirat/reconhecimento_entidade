@@ -1,0 +1,26 @@
+{
+  "fruta_distancia": [
+    0,
+    0,
+    0,
+    0.5555555555555556
+  ],
+  "fruta_classe": [
+    "abobora",
+    "tangerina",
+    "tangerina",
+    "tangerina"
+  ],
+  "cor_distancia": [
+    0,
+    0,
+    0.6,
+    0
+  ],
+  "cor_classe": [
+    "azul",
+    "roxo",
+    "azul",
+    "azul"
+  ]
+}
