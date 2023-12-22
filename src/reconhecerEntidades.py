@@ -5,6 +5,12 @@ from unidecode import unidecode
 from abc import ABC, abstractmethod
 import Levenshtein
 
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
 class TratarTexto():   
     def __init__(self) -> None:
         pass
@@ -41,9 +47,12 @@ class TratarTexto():
        
 class LeitorJson():
     def __init__(self,caminho_arquivo)-> None:
-        self.json_data = self.ler_arquivo_json(caminho_arquivo)
+
+        if isinstance(caminho_arquivo, str):
+            self.json_data = self.ler_arquivo_json(caminho_arquivo)
+        elif isinstance(caminho_arquivo, dict) or is_iterable(caminho_arquivo):
+            self.json_data = caminho_arquivo
         self.data = self.json_data
-        
 
     def __str__(self):
             return json.dumps(self.data,ensure_ascii=False)
@@ -68,11 +77,12 @@ class Classes(LeitorJson):
         self.unique = None
      
     def valida_json(self):
+        
         for chave, valor in self.json_data.items():
              if not isinstance(valor, dict):
                     raise ValueError(f"A chave '{chave}' deve ser um dicionário.")
              for subchave, subvalor in valor.items():
-                if not isinstance(subvalor, list):
+                if not is_iterable(subvalor):
                     raise ValueError(f"A categoria '{subchave}' da chave '{chave}' deve ser uma lista como valor.")
         return True
     
@@ -101,7 +111,7 @@ class Textos(LeitorJson):
         super().__init__(caminho_arquivo)
     
     def valida_json(self):
-        if not isinstance(self.json_data, list):
+        if not is_iterable(self.json_data):
                 raise ValueError(f"O json de texto deve vir no tipo lista.")
         return True
     
@@ -156,28 +166,33 @@ class Classificador():
 
         return predicoes
 
-  
+def executar(categorias,textos):
+    classes = Classes(categorias)
+    classes.valida_json()
+    classes.normalizar_texto(TratarTexto.processar)
+    classes.organizar()
+    
+    textos = Textos(textos)
+    textos.valida_json()
+    textos.normalizar_texto(TratarTexto.processar)
+
+    clsf = Classificador(classes.data,classes.unique)
+    predictions = clsf.predict(textos.data)
+    return predictions
+
+def printar():
+    print('mimde')
+
 def main():
-    import time
     if len(sys.argv) != 4:
         print("Uso: python reconhecerEntidades <caminho_json_dicionario> <caminho_json_textos> <caminho_saida>")
         sys.exit(1)
 
     caegorias_path = sys.argv[1]
-    classes = Classes(caegorias_path)
-    classes.valida_json()
-    classes.normalizar_texto(TratarTexto.processar)
-    classes.organizar()
-    
     textos_path = sys.argv[2]
-    textos = Textos(textos_path)
-    textos.valida_json()
-    textos.normalizar_texto(TratarTexto.processar)
-
-
-    output_path = sys.argv[3]     
-    clsf = Classificador(classes.data,classes.unique)
-    predictions = clsf.predict(textos.data)
+    output_path = sys.argv[3]   
+    
+    predictions= executar(caegorias_path,textos_path)
     predictions =  json.dumps(predictions, indent=2)
     with open(output_path, 'w') as arquivo_json:
         arquivo_json.write(predictions)
